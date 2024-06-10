@@ -64,4 +64,16 @@ suite('configure', () => {
 
     assert.deepStrictEqual(act, exp)
   })
+
+  test('converts defaults', () => {
+    const exp = {
+      foo: 3 * 1000
+    }
+
+    const def = { foo: '3s' }
+
+    const act = configure(prefix, def)
+
+    assert.deepStrictEqual(act, exp)
+  })
 })

@@ -4,25 +4,19 @@ import { parse as parseMs } from '@lukeed/ms'
 import camelCase from '@ludlovian/camel'
 import guess from '@ludlovian/guess'
 
-export default function configure (prefix, defaults = {}) {
-  return Object.assign({}, defaults, fromEnv(prefix))
-}
+const { entries, fromEntries } = Object
 
-function fromEnv (prefix) {
-  return Object.fromEntries(
-    Object.entries(process.env)
-      .map(([key, value]) => {
-        if (!key.startsWith(prefix)) return undefined
-        key = key.slice(prefix.length)
-        return [camelCase(key), convert(value)]
-      })
-      .filter(Boolean)
-  )
+export default function configure (prefix, defaults = {}) {
+  return fromEntries([
+    ...entries(defaults).map(([k, v]) => [k, convertTime(v)]),
+    ...entries(process.env)
+      .filter(([k]) => k.startsWith(prefix))
+      .map(([k, v]) => [camelCase(k.slice(prefix.length)), v])
+      .map(([k, v]) => [k, guess(convertTime(v))])
+  ])
 }
 
 const rgxMs = /^\d+[ms]$/
-
-function convert (x) {
-  if (rgxMs.test(x)) return parseMs(x)
-  return guess(x)
+function convertTime (value) {
+  return typeof value === 'string' && rgxMs.test(value) ? parseMs(value) : value
 }
