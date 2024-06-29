@@ -102,4 +102,17 @@ suite('configure', () => {
     act = { ...configure.config }
     assert.deepStrictEqual(act, exp)
   })
+
+  test('Vars referring to others', () => {
+    const def = {
+      bar: x => x.foo + 'bar',
+      foo: 'baz'
+    }
+    const exp = {
+      bar: 'bazbar',
+      foo: 'baz'
+    }
+    const act = configure(prefix, def)
+    assert.deepStrictEqual(act, exp)
+  })
 })

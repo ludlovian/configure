@@ -19,12 +19,31 @@ This function assembles the configuration from:
 - the default object
 - environment variables
 
-The environment variables should be in `SNAKE_UPPER_CASE` prefixed
-with the given `PREFIX_`. They will be converted to `camelCase`.
+Environment variables overwrite defaults
 
-In addition:
-- things that like numbers or `true`/`false` will be converted automagically
-- durations like `10m` will be converted too if given as a string. This is also true for the defaults object
+### Variable names
+
+The environment variables should be in `SNAKE_UPPER_CASE` prefixed
+with the given `PREFIX_`.
+
+They will be converted to `camelCase`, which is how they appear in the object
+returned.
+
+### Value conversion
+
+Environment variables will be converted as follows:
+- Number-y strings will become numbers
+- The strings `true` and `false` will be turned into Booleans
+- Strings that look like short durations - e.g. `15s` or `2m` - will be converted to milliseconds
+
+Default variables will only have the duration convenience conversion
+
+### Referring to other variables
+
+If a value given is a function, it will be called with the configuration object.
+
+The return value will be used as the value for this variable
+
 
 ## config
 
