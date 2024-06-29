@@ -22,6 +22,10 @@ suite('configure', () => {
         delete process.env[k]
       }
     }
+
+    for (const k in configure.config) {
+      delete configure.config[k]
+    }
   })
 
   test('empty', () => {
@@ -74,6 +78,28 @@ suite('configure', () => {
 
     const act = configure(prefix, def)
 
+    assert.deepStrictEqual(act, exp)
+  })
+
+  test('captures globals', () => {
+    let act
+    let exp
+    let def
+
+    def = { baz: 1 }
+    exp = { baz: 1 }
+
+    act = configure('FOO', def)
+    assert.deepStrictEqual(act, exp)
+
+    def = { boo: 2 }
+    exp = { boo: 2 }
+
+    act = configure('BAR_', def)
+    assert.deepStrictEqual(act, exp)
+
+    exp = { fooBaz: 1, barBoo: 2 }
+    act = { ...configure.config }
     assert.deepStrictEqual(act, exp)
   })
 })
