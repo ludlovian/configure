@@ -1,6 +1,6 @@
 {
   "name": "@ludlovian/configure",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Configure from environemnt",
   "main": "src/index.mjs",
   "exports": {
