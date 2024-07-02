@@ -41,7 +41,7 @@ function configure (prefix, defaults = {}) {
   return localConfig
 }
 
-const rgxMs = /^\d+[hms]$/
+const rgxMs = /^\d+[dhms]$/
 function convertTime (value) {
   return typeof value === 'string' && rgxMs.test(value) ? parseMs(value) : value
 }
