@@ -7,21 +7,13 @@ import configure from '../src/index.mjs'
 suite('configure', () => {
   let _savedEnv
   const prefix = 'FOO_'
-  function setEnv (obj) {
-    Object.entries(obj).forEach(([k, v]) => (process.env[prefix + k] = v))
-  }
 
   beforeEach(() => {
-    _savedEnv = { ...process.env }
+    _savedEnv = process.env
+    process.env = { ..._savedEnv }
   })
   afterEach(() => {
-    for (const k in process.env) {
-      if (k in _savedEnv) {
-        process.env[k] = _savedEnv[k]
-      } else {
-        delete process.env[k]
-      }
-    }
+    process.env = _savedEnv
 
     for (const k in configure.config) {
       delete configure.config[k]
@@ -36,48 +28,60 @@ suite('configure', () => {
   })
 
   test('full set', () => {
-    setEnv({
-      BAR: '1',
-      BAZ: 'true',
-      FIZZ_BAR: '3s',
+    const exp = {
+      bar: 2,
+      baz: false,
+      fizzBar: 3 * 1000,
+      boof: 20
+    }
+
+    const def = {
+      bar: 2,
+      baz: false,
+      fizzBar: '3s',
+      boof: c => c.bar * 10
+    }
+
+    const act = configure(prefix, def)
+
+    assert.deepStrictEqual(act, exp)
+  })
+
+  test('full set of overrides', () => {
+    process.env = {
+      FOO_BAR: '1',
+      FOO_BAZ: 'true',
+      FOO_FIZZ_BAR: '3s',
       BAZ_FOO: 'foobar'
-    })
+    }
 
     const exp = {
       bar: 1,
       baz: true,
       fizzBar: 3 * 1000,
-      bazFoo: 'foobar'
+      boof: 10
     }
 
-    const act = configure(prefix)
+    const def = {
+      bar: 2,
+      baz: false,
+      fizzBar: undefined,
+      boof: c => c.bar * 10
+    }
+
+    const act = configure(prefix, def)
 
     assert.deepStrictEqual(act, exp)
   })
 
-  test('default override', () => {
-    setEnv({ BAR: 'baz' })
+  test('prefix without underscore', () => {
     const def = { bar: 'foo', baz: 'fizz' }
-
     const exp = {
       bar: 'baz',
       baz: 'fizz'
     }
-
-    const act = configure(prefix, def)
-
-    assert.deepStrictEqual(act, exp)
-  })
-
-  test('converts defaults', () => {
-    const exp = {
-      foo: 3 * 1000
-    }
-
-    const def = { foo: '3s' }
-
-    const act = configure(prefix, def)
-
+    process.env = { FOO_BAR: 'baz' }
+    const act = configure('FOO', def)
     assert.deepStrictEqual(act, exp)
   })
 
@@ -103,16 +107,16 @@ suite('configure', () => {
     assert.deepStrictEqual(act, exp)
   })
 
-  test('Vars referring to others', () => {
-    const def = {
-      bar: x => x.foo + 'bar',
-      foo: 'baz'
-    }
-    const exp = {
-      bar: 'bazbar',
-      foo: 'baz'
-    }
-    const act = configure(prefix, def)
-    assert.deepStrictEqual(act, exp)
+  test('show config', t => {
+    const log = t.mock.fn()
+    const exit = t.mock.fn()
+    t.mock.method(console, 'log', log)
+    t.mock.method(process, 'exit', exit)
+
+    process.env = { FOO_SHOW_CONFIG: 1 }
+    configure(prefix, { foo: 'bar' })
+
+    assert(log.mock.callCount() > 0)
+    assert(exit.mock.callCount() === 1)
   })
 })

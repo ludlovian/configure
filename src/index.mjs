@@ -3,47 +3,47 @@ import { parse as parseMs } from '@lukeed/ms'
 import camelCase from '@ludlovian/camel'
 import guess from '@ludlovian/guess'
 
-const { entries } = Object
 const config = {}
 
 function configure (prefix, defaults = {}) {
   if (prefix && !prefix.endsWith('_')) prefix += '_'
 
-  // The config object we are building
   const localConfig = {}
+  for (const localKey of Object.keys(defaults)) {
+    const globalKey = camelCase(prefix + localKey)
+    const envKey = snake(prefix) + snake(localKey)
+    let value =
+      typeof defaults[localKey] === 'function'
+        ? defaults[localKey](localConfig)
+        : convertTime(defaults[localKey])
 
-  // step 1 - static values from the defaults
-  for (const [k, v] of entries(defaults)) {
-    if (typeof v !== 'function') localConfig[k] = convertTime(v)
-  }
-
-  // step 2 - function-based values from the defaults
-  //
-  for (const [k, fn] of entries(defaults)) {
-    if (typeof fn === 'function') localConfig[k] = fn(localConfig)
-  }
-
-  // step 3 - add in environment varaiables
-  //
-  for (const [kk, v] of entries(process.env)) {
-    if (kk.startsWith(prefix)) {
-      const k = camelCase(kk.slice(prefix.length))
-      localConfig[k] = guess(convertTime(v))
+    if (envKey in process.env) {
+      value = guess(convertTime(process.env[envKey]))
     }
+
+    localConfig[localKey] = config[globalKey] = value
   }
 
-  // step 4 - add to global object
-  //
-  for (const [k, v] of entries(localConfig)) {
-    config[camelCase(prefix + k)] = v
+  if (process.env[snake(prefix) + 'SHOW_CONFIG']) {
+    console.log(`\nShowing config for ${prefix.replace(/_$/, '')}:\n`)
+    console.log(localConfig)
+    console.log('\n')
+    process.exit(1)
   }
-
+  Object.freeze(localConfig)
   return localConfig
 }
 
-const rgxMs = /^\d+[dhms]$/
+const rxPeriod = /^\d+[dhms]$/
 function convertTime (value) {
-  return typeof value === 'string' && rgxMs.test(value) ? parseMs(value) : value
+  return typeof value === 'string' && rxPeriod.test(value)
+    ? parseMs(value)
+    : value
+}
+
+const rxSnake = /([a-z0-9])([A-Z])/g
+function snake (s) {
+  return s.replace(rxSnake, '$1_$2').toUpperCase()
 }
 
 configure.config = config
