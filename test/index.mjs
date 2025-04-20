@@ -6,7 +6,6 @@ import configure from '../src/index.mjs'
 
 suite('configure', () => {
   let _savedEnv
-  const prefix = 'FOO_'
 
   beforeEach(() => {
     _savedEnv = process.env
@@ -22,7 +21,7 @@ suite('configure', () => {
 
   test('empty', () => {
     const exp = {}
-    const act = configure(prefix)
+    const act = configure('FOO_')
 
     assert.deepStrictEqual(act, exp)
   })
@@ -35,14 +34,18 @@ suite('configure', () => {
       boof: 20
     }
 
-    const def = {
+    const def1 = {
       bar: 2,
-      baz: false,
+      baz: false
+    }
+
+    const def2 = {
       fizzBar: '3s',
       boof: c => c.bar * 10
     }
 
-    const act = configure(prefix, def)
+    const act = configure('FOO_', def1)
+    configure('FOO_', def2)
 
     assert.deepStrictEqual(act, exp)
   })
@@ -69,7 +72,7 @@ suite('configure', () => {
       boof: c => c.bar * 10
     }
 
-    const act = configure(prefix, def)
+    const act = configure('FOO_', def, { shared: false })
 
     assert.deepStrictEqual(act, exp)
   })
@@ -81,7 +84,7 @@ suite('configure', () => {
       baz: 'fizz'
     }
     process.env = { FOO_BAR: 'baz' }
-    const act = configure('FOO', def)
+    const act = configure('FOO', def, { shared: false })
     assert.deepStrictEqual(act, exp)
   })
 
@@ -93,7 +96,7 @@ suite('configure', () => {
     def = { baz: 1 }
     exp = { baz: 1 }
 
-    act = configure('FOO', def)
+    act = configure('FOO', def, { shared: false })
     assert.deepStrictEqual(act, exp)
 
     def = { boo: 2 }
@@ -114,7 +117,7 @@ suite('configure', () => {
     t.mock.method(process, 'exit', exit)
 
     process.env = { FOO_SHOW_CONFIG: 1 }
-    configure(prefix, { foo: 'bar' })
+    configure('FOO_', { foo: 'bar' })
 
     assert(log.mock.callCount() > 0)
     assert(exit.mock.callCount() === 1)

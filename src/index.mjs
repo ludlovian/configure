@@ -3,12 +3,20 @@ import { parse as parseMs } from '@lukeed/ms'
 import camelCase from '@ludlovian/camel'
 import guess from '@ludlovian/guess'
 
+// the global config which has everything
 const config = {}
 
-function configure (prefix, defaults = {}) {
+// the local one(s) which might be shared across multiple
+// settings
+const localConfigs = {}
+
+function configure (prefix, defaults = {}, opts = {}) {
+  const { shared = true } = opts
   if (prefix && !prefix.endsWith('_')) prefix += '_'
 
-  const localConfig = {}
+  if (!shared || !(prefix in localConfigs)) localConfigs[prefix] = {}
+  const localConfig = localConfigs[prefix]
+
   for (const localKey of Object.keys(defaults)) {
     const globalKey = camelCase(prefix + localKey)
     const envKey = snake(prefix) + snake(localKey)
@@ -30,7 +38,6 @@ function configure (prefix, defaults = {}) {
     console.log('\n')
     process.exit(1)
   }
-  Object.freeze(localConfig)
   return localConfig
 }
 
