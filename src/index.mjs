@@ -28,7 +28,11 @@ function configure (prefix, defaults = {}, opts = {}) {
     if (envKey in process.env) {
       value = guess(convertTime(process.env[envKey]))
     }
-
+    // don't overwrite someone else - first one wins
+    // and applies the environment if set
+    if (localKey in localConfig) {
+      continue
+    }
     localConfig[localKey] = config[globalKey] = value
   }
 
