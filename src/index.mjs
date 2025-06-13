@@ -3,19 +3,29 @@ import { parse as parseMs } from '@lukeed/ms'
 import camelCase from '@ludlovian/camel'
 import guess from '@ludlovian/guess'
 
+const key = Symbol.for('@ludlovian/configure')
+const GLOBAL = global[key] ?? (global[key] = {})
+
 // the global config which has everything
-const config = {}
+const config = GLOBAL.config ?? (GLOBAL.config = {})
 
 // the local one(s) which might be shared across multiple
 // settings
-const localConfigs = {}
+const localConfigs = GLOBAL.localConfigs ?? (GLOBAL.localConfigs = {})
 
-function configure (prefix, defaults = {}, opts = {}) {
-  const { shared = true } = opts
+if (!config.clear) {
+  Object.defineProperty(config, 'clear', {
+    enumerable: false,
+    writable: false,
+    configurable: true,
+    value: clear
+  })
+}
+
+function configure (prefix, defaults = {}) {
   if (prefix && !prefix.endsWith('_')) prefix += '_'
 
-  if (!shared || !(prefix in localConfigs)) localConfigs[prefix] = {}
-  const localConfig = localConfigs[prefix]
+  const localConfig = localConfigs[prefix] ?? (localConfigs[prefix] = {})
 
   for (const localKey of Object.keys(defaults)) {
     const globalKey = camelCase(prefix + localKey)
@@ -35,14 +45,17 @@ function configure (prefix, defaults = {}, opts = {}) {
     }
     localConfig[localKey] = config[globalKey] = value
   }
-
-  if (process.env[snake(prefix) + 'SHOW_CONFIG']) {
-    console.log(`\nShowing config for ${prefix.replace(/_$/, '')}:\n`)
-    console.log(localConfig)
-    console.log('\n')
-    process.exit(1)
-  }
   return localConfig
+}
+
+function clear () {
+  for (const k in config) {
+    if (k !== 'clear') delete config[k]
+  }
+
+  for (const k in localConfigs) {
+    delete localConfigs[k]
+  }
 }
 
 const rxPeriod = /^\d+[dhms]$/

@@ -13,10 +13,7 @@ suite('configure', () => {
   })
   afterEach(() => {
     process.env = _savedEnv
-
-    for (const k in configure.config) {
-      delete configure.config[k]
-    }
+    configure.config.clear()
   })
 
   test('empty', () => {
@@ -110,16 +107,14 @@ suite('configure', () => {
     assert.deepStrictEqual(act, exp)
   })
 
-  test('show config', t => {
-    const log = t.mock.fn()
-    const exit = t.mock.fn()
-    t.mock.method(console, 'log', log)
-    t.mock.method(process, 'exit', exit)
-
-    process.env = { FOO_SHOW_CONFIG: 1 }
-    configure('FOO_', { foo: 'bar' })
-
-    assert(log.mock.callCount() > 0)
-    assert(exit.mock.callCount() === 1)
+  test('doesnt overwrite', () => {
+    const cfg1 = configure('FOO_', {
+      foo: 'bar'
+    })
+    const cfg2 = configure('FOO_', {
+      foo: 'baz'
+    })
+    assert(cfg1 === cfg2)
+    assert(cfg1.foo === 'bar')
   })
 })
